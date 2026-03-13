@@ -1,11 +1,9 @@
 export default async function handler(req, res) {
-
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
     const message = body.message;
 
@@ -34,17 +32,13 @@ Students, professionals, and organisations.
       `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [
             {
               role: "user",
               parts: [
-                {
-                  text: `${schedeaseKnowledge}\n\nUser question: ${message}`
-                }
+                { text: `${schedeaseKnowledge}\n\nUser question: ${message}` }
               ]
             }
           ]
@@ -52,11 +46,13 @@ Students, professionals, and organisations.
       }
     );
 
-    const data = await geminiResponse.json();
+    const text = await geminiResponse.text();
+    console.log("Raw Gemini response:", text); // <--- DEBUG LOG
+
+    const data = JSON.parse(text);
 
     if (!data.candidates) {
-      console.error(data);
-      return res.status(500).json({ error: "Gemini API error" });
+      return res.status(500).json({ error: "Gemini API error", details: data });
     }
 
     res.status(200).json({
@@ -64,13 +60,10 @@ Students, professionals, and organisations.
     });
 
   } catch (error) {
-
     console.error("Chatbot error:", error);
-
     res.status(500).json({
       error: "Chatbot failed",
       details: error.message
     });
-
   }
 }
