@@ -1,11 +1,15 @@
 export default async function handler(req, res) {
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { message } = req.body;
+  try {
 
-  const schedeaseKnowledge = `
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    const message = body.message;
+
+    const schedeaseKnowledge = `
 Schedease is a scheduling and appointment management platform.
 
 Purpose:
@@ -22,8 +26,7 @@ Target Users:
 Students, professionals, and organisations.
 `;
 
-  try {
-    const response = await fetch(
+    const openaiResponse = await fetch(
       "https://api.openai.com/v1/chat/completions",
       {
         method: "POST",
@@ -46,10 +49,25 @@ Students, professionals, and organisations.
       }
     );
 
-    const data = await response.json();
-    res.status(200).json({ reply: data.choices[0].message.content });
+    const data = await openaiResponse.json();
+
+    if (!data.choices) {
+      console.error(data);
+      return res.status(500).json({ error: "OpenAI error" });
+    }
+
+    res.status(200).json({
+      reply: data.choices[0].message.content
+    });
 
   } catch (error) {
-    res.status(500).json({ error: "Chatbot failed" });
+
+    console.error("Chatbot error:", error);
+
+    res.status(500).json({
+      error: "Chatbot failed",
+      details: error.message
+    });
+
   }
 }
